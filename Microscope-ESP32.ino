@@ -102,7 +102,7 @@ if(client) {
           client.println("<!DOCTYPE HTML><html><head>");
           client.println("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"></head>");
           client.println("<h1>ESP32 Microscope- Web Server</h1>");
-          client.println("<p>Power<a href=\"pwrOn\"><button>ON</button></a>&nbsp;<a href=\"pwrOff\"><button>OFF</button></a></p>");
+          client.println("<p>Power<a href=\"pwrOn\"><button>ON/OFF</button></a>");
           client.println("<p>OK<a href=\"ok\"><button>OK</button></a></p>");
           client.println("<p>Menu<a href=\"mnu\"><button>Menu</button></a></p>");
           client.println("<p>Mode<a href=\"mde\"><button>Mode</button></a></p>");
@@ -156,23 +156,6 @@ if(client) {
     Serial.println("client disconnected");
   }
 }
-
-//PowerToggle();
-//Serial.println("Power on");
-
-/*
-  Serial.println("Power button on");
-  dac_output_voltage(DAC_CHANNEL_1, 255);
-  delay(1325);
-  dac_output_voltage(DAC_CHANNEL_1, 0);
-  Serial.println("wait");
-  delay(10000);
-  Serial.println("Power off");
-  dac_output_voltage(DAC_CHANNEL_1, 255);
-  delay(1325);
-  dac_output_voltage(DAC_CHANNEL_1, 0);
-  delay(10000);
-*/
 
 int PowerToggle(){
   Serial.println("Power button on");
