@@ -1,14 +1,22 @@
 #include <driver/dac.h>
 #include <WiFi.h>
+//load configuration file
+#include "config.h"
 
-//SETUP Wlan connection
-char ssid[] = "SSID";
-const char* password = "PASSWORD";
-
-int Powerbutton = 25;
 
 const char* buttonTypeName = "";
 int type = 0;
+
+  /* The Navigation buttons are connected via a single line and identifyed by different resistence
+   * 255 = 3,15V
+   * 
+   * Resistors: 0       15K         33K         47K         68K
+   * Voltage:   0 V     400 mV      750 mV      975 mV      1325 mV
+   * Pins:      OK      MODE        MENU        RIGHT       LEFT
+   * IO25:      0       29          57/58       76          104/106                       
+   *    
+   * The Power Button need to be controlled seperately
+   */
 
 int ok = 0;
 int mode = 29;
@@ -41,34 +49,20 @@ void setup() {
     delay(500);
     Serial.print(".");
   }
-
   Serial.println("");
   Serial.println("WiFi connected");
   Serial.print("IP address: ");
   Serial.println(WiFi.localIP());
-
-
-  //Power button
-  pinMode(Powerbutton, OUTPUT);
   
   // Enable DAC
   //Power button
-  dac_output_enable(DAC_CHANNEL_1);
-  //Navigation
-  dac_output_enable(DAC_CHANNEL_2);
+ // dac_output_enable(DAC_CHANNEL_1);
+  //
+  //Navigation buttons
+  //dac_output_enable(DAC_CHANNEL_2);
   dac_output_voltage(DAC_CHANNEL_2, 255);
   
-  /*
-   * 255 = 3,15V
-   * 
-   * Resistors: 0       15K         33K         47K         68K
-   * Voltage:   0 V     400 mV      750 mV      975 mV      1325 mV
-   * Pins:      OK      MODE        MENU        RIGHT       LEFT
-   * IO25:      0       29          57/58       76          104/106                       
-   *    
-   * The Power Button need to be controlled seperately
-   */
-  server.begin();
+ server.begin();
 
 }
 
@@ -99,15 +93,22 @@ if(client) {
           client.println("Content-Type: text/html");
           client.println("Connection: close");  // the connection will be closed after completion of the response
           client.println();
-          client.println("<!DOCTYPE HTML><html><head>");
-          client.println("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"></head>");
-          client.println("<h1>ESP32 Microscope- Web Server</h1>");
+          client.println("<!DOCTYPE HTML><html lang=\"de\"><head>");
+          client.println("<meta charset=\"utf-8\">");
+          client.println("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">");
+          client.println("<title>ESP32 Microscope - Web Server</title></head>");
+          client.println("<body>");
           client.println("<p>Power<a href=\"pwrOn\"><button>ON/OFF</button></a>");
           client.println("<p>OK<a href=\"ok\"><button>OK</button></a></p>");
           client.println("<p>Menu<a href=\"mnu\"><button>Menu</button></a></p>");
           client.println("<p>Mode<a href=\"mde\"><button>Mode</button></a></p>");
-          client.println("<p>Left<a href=\"lft\"><button>Left</button></a></p>");
-          client.println("<p>Right<a href=\"rgt\"><button>Right</button></a></p>");
+          client.println("<left>Left<a href=\"lft\"><button>Left</button></a></left><right>Right<a href=\"rgt\"><button>Right</button></a></right>");
+          client.println("<h1><center>Video</center></h1>");
+          client.println("<p>Video datecode Toggle<a href=\"vdate\"><button>Video datecode Toggle</button></a></p>");
+          client.println("<p>Motion detection Toggle<a href=\"mtn\"><button>Motion detection Toggle</button></a></p>");
+          client.println("<h1><center>Photo<center></h1>");
+          client.println("<p>Photo datecode Toggle<a href=\"pdate\"><button>Photo datecode Toggle</button></a></p>");
+          client.println("</body>");
           client.println("</html>");
           break;
         }
@@ -138,6 +139,39 @@ if(client) {
             Serial.println("Right");
             Button(right);
           }
+          else if (strstr(linebuf,"GET /mtn") > 0){
+            Serial.println("Motion detection toggle");
+            Button(menu);
+            Button(right);
+            Button(right);
+            Button(ok);
+            Button(right);
+            Button(ok);
+            Button(menu);
+            Button(menu);
+          }
+          else if (strstr(linebuf,"GET /vdate") > 0){
+            Serial.println("Video Datecode Toggle");
+            Button(menu);
+            Button(right);
+            Button(ok);
+            Button(right);
+            Button(ok);
+            Button(menu);
+            Button(menu);
+          }
+          else if (strstr(linebuf,"GET /pdate") > 0){
+            Serial.println("Photo Datecode Toggle");
+            Button(menu);
+            Button(right);
+            Button(right);
+            Button(ok);
+            Button(right);
+            Button(ok);
+            Button(menu);
+            Button(menu);
+          }
+          
           // you're starting a new line
           currentLineIsBlank = true;
           memset(linebuf,0,sizeof(linebuf));
@@ -159,13 +193,16 @@ if(client) {
 
 int PowerToggle(){
   Serial.println("Power button on");
+  dac_output_enable(DAC_CHANNEL_1);
   dac_output_voltage(DAC_CHANNEL_1, 255);
   delay(1325);
-  dac_output_voltage(DAC_CHANNEL_1, 0);
+  dac_output_disable(DAC_CHANNEL_1);
   delay(3000);
   }
-  
+
+
 int Button(int type){
+  dac_output_enable(DAC_CHANNEL_2);
   if (type == 0){
     buttonTypeName = "OK";
   }
@@ -184,7 +221,8 @@ int Button(int type){
   Serial.print(buttonTypeName);
   Serial.println(" button pressed");
   dac_output_voltage(DAC_CHANNEL_2,type);
-  delay(200);
-  dac_output_voltage(DAC_CHANNEL_2, 255);
+  delay(100);
+  dac_output_disable(DAC_CHANNEL_2);
+  delay(50);
 }
 
